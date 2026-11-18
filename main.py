@@ -61,7 +61,7 @@ def avisar_galeria(caminho):
         scanner.scanFile(atividade, [caminho], None, None)
     except Exception:
         pass
-      class MainApp(App):
+    class MainApp(App):
     title = "Baixar Musica"
 
     def build(self):
@@ -107,8 +107,7 @@ def avisar_galeria(caminho):
             self.entry.text = (Clipboard.paste() or "").strip()
         except Exception:
             pass
-
-    def baixar(self, *args):
+                def baixar(self, *args):
         url = self.entry.text.strip()
         if not url:
             self._ui(0, "Cole um link primeiro.", VERMELHO)
@@ -131,8 +130,7 @@ def avisar_galeria(caminho):
             self._ui(pct, f"Baixando... {pct:.0f}%")
         elif d["status"] == "finished":
             self._ui(100, "Salvando...")
-
-    def _baixar(self, url):
+                def _baixar(self, url):
         try:
             import yt_dlp
 
@@ -150,3 +148,31 @@ def avisar_galeria(caminho):
                 "windowsfilenames": True,
                 "progress_hooks": [self._hook],
             }
+            with yt_dlp.YoutubeDL(opcoes) as ydl:
+                ydl.download([url])
+
+            destino = achar_destino()
+            if destino is None:
+                destino = os.path.join(self.user_data_dir, "musicas")
+                os.makedirs(destino, exist_ok=True)
+
+            salvos = []
+            for arq in glob.glob(os.path.join(tmp, "*")):
+                if arq.lower().endswith(EXTS):
+                    final = os.path.join(destino, os.path.basename(arq))
+                    shutil.copyfile(arq, final)
+                    avisar_galeria(final)
+                    salvos.append(final)
+            shutil.rmtree(tmp, ignore_errors=True)
+
+            if not salvos:
+                raise RuntimeError("Nenhum arquivo de áudio foi gerado.")
+            self._ui(100, f"Pronto!\nSalvo em:\n{destino}", VERDE)
+        except Exception as e:
+            self._ui(0, f"Erro: {str(e)[:200]}", VERMELHO)
+        finally:
+            Clock.schedule_once(lambda dt: setattr(self.btn, "disabled", False), 0)
+
+
+if __name__ == "__main__":
+    MainApp().run()
